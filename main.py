@@ -11,6 +11,7 @@ import locale
 import json
 import bz2
 import os
+import schedule
 
 # SAVING FILE LOCATION:
 JSON_FILE = 'data.json'
@@ -93,13 +94,23 @@ def is_word_open():
     else:
         return True
 
-
 # App
-create_template()
-os.startfile(WORD_FILE_LOCATION)
+def main():
+    create_template()
+    os.startfile(WORD_FILE_LOCATION)
+    while(is_word_open()):
+        time.sleep(5)
+        print('debug oh yeah')
+    print('saving the questions...')
+    save_question()
 
-while(is_word_open()):
-    time.sleep(5)
-    print('debug oh yeah')
-print('saving the questions...')
-save_question()
+# conf
+with open(CONFIG_FILE, 'r') as file:
+    j = ''.join(file.readlines())
+    conf = json.loads(j)
+schedule.every().day.at(conf['time']).do(main)
+print(f"scheduled for {conf['time']}")
+
+while True:
+        schedule.run_pending()
+        time.sleep(20)
