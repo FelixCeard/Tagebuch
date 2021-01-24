@@ -3,20 +3,32 @@
 # send money please: paypal => fureurfatal@gmail.com
 
 from docx import Document
-from docx.shared import *
 from time import strftime
-import time
-import docx
+import schedule
+import argparse
 import locale
+import docx
+import time
 import json
 import bz2
 import os
-import schedule
+
+parser = argparse.ArgumentParser(description='Diary app.')
+parser.add_argument('--wd', action='store', type=str, required=True)
+args = parser.parse_args()
+
 
 # SAVING FILE LOCATION:
-JSON_FILE = 'data.json'
-WORD_FILE_LOCATION = 'temp_file.docx'
-CONFIG_FILE = 'config.json'
+CONFIG_FILE = args.wd + '/config.json'
+JSON_FILE = args.wd+'/src/data.json'
+WORD_FILE_LOCATION = args.wd+'/src/temp_file.docx'
+
+debug = False
+
+with open(CONFIG_FILE, 'r') as file:
+    j = ''.join(file.readlines())
+    config = json.loads(j)
+
 
 locale.setlocale(locale.LC_ALL, "de_DE")
 
@@ -70,13 +82,13 @@ def save_question():
         'Q2': q2
     })
     with open(JSON_FILE, 'w') as file:
-        json.dump(Jfile, file)
+        json.dump(Jfile, file, indent=2)
     with open(CONFIG_FILE, 'r') as file:
         j = ''.join(file.readlines())
         conf = json.loads(j)
     conf['written'] = True
     with open(CONFIG_FILE, 'w') as file:
-        json.dump(conf, file)
+        json.dump(conf, file, indent=2)
 
 def getTasks(name):
     # funcion from https://www.bogotobogo.com/python/python-Windows-Check-if-a-Process-is-Running-Hanging-Schtasks-Run-Stop.php
@@ -100,17 +112,16 @@ def main():
     os.startfile(WORD_FILE_LOCATION)
     while(is_word_open()):
         time.sleep(5)
-        print('debug oh yeah')
-    print('saving the questions...')
+        if debug == True:
+            print('debug oh yeah, curently sleepy for... ... ...5 ...seconds')
+    if debug == True:
+        print('saving the questions...')
     save_question()
 
-# conf
-with open(CONFIG_FILE, 'r') as file:
-    j = ''.join(file.readlines())
-    conf = json.loads(j)
-schedule.every().day.at(conf['time']).do(main)
-print(f"scheduled for {conf['time']}")
+schedule.every().day.at(config['time']).do(main)
+if debug == True:
+    print(f"scheduled for {config['time']}")
 
 while True:
         schedule.run_pending()
-        time.sleep(20)
+        time.sleep(40)
