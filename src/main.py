@@ -23,6 +23,7 @@ CONFIG_FILE = args.wd + '/config.json'
 JSON_FILE = args.wd+'/src/data.json'
 WORD_FILE_LOCATION = args.wd+'/src/temp_file.docx'
 
+locale.setlocale(locale.LC_ALL, "de_DE")
 debug = False
 
 with open(CONFIG_FILE, 'r') as file:
@@ -30,9 +31,14 @@ with open(CONFIG_FILE, 'r') as file:
     config = json.loads(j)
 
 
-locale.setlocale(locale.LC_ALL, "de_DE")
-
-def create_template():
+def log(text, l):
+    l.write('(' + strftime('%d/%m/%Y') + ') ')
+    l.write('['+strftime('%H:%M:%S')+'] ')
+    l.write(text+"\n")
+    # log('init successfull')
+def create_template(l=False):
+    if l != False:
+        log('created the document', l)
     doc = Document()
     date = strftime('%d %B %Y')
 
@@ -50,6 +56,7 @@ def create_template():
     e.font.name = 'Calibri'
 
     doc.save(WORD_FILE_LOCATION)
+    log('document was sucessfully created', l)
 
 def read_file():
     doc = docx.Document(WORD_FILE_LOCATION)
@@ -107,21 +114,38 @@ def is_word_open():
         return True
 
 # App
-def main():
-    create_template()
+def mainn():
+    logger = open(args.wd+'/src/log.txt', 'a')
+    log('successfully opened the file (probably startup)', logger)
+    create_template(logger)
     os.startfile(WORD_FILE_LOCATION)
     while(is_word_open()):
         time.sleep(5)
-        if debug == True:
-            print('debug oh yeah, curently sleepy for... ... ...5 ...seconds')
-    if debug == True:
-        print('saving the questions...')
+        log('sleepy sleepy for... ... ...5 ...seconds', logger)
+    log('saving the questions...', logger)
     save_question()
+    log('saved the file, waiting for next startup')
 
-schedule.every().day.at(config['time']).do(main)
-if debug == True:
-    print(f"scheduled for {config['time']}")
+def check():
+    with open(CONFIG_FILE, 'r') as file:
+        j = ''.join(file.readlines())
+        conf = json.loads(j)
+    if conf['written'] == False:
+        mainn()
+    else:
+        conf['written'] = False
+        with open(CONFIG_FILE, 'w') as file:
+            json.dump(conf, file, indent=2)
+# mainn()
+if __name__ == '__main__':
+    # mainn()
+    logger = open(args.wd+'/src/log.txt', 'a')
+    log('just opened the file', logger)
+    schedule.every().day.at(config['time']).do(mainn)
+    schedule.every().day.at(config['checkupTime']).do(check)
+    log(f"scheduled opener for {config['time']} and checkup for {config['checkupTime']}", logger)
+    logger.close()
 
-while True:
+    while True:
         schedule.run_pending()
         time.sleep(40)
